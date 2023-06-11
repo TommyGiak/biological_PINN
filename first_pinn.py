@@ -7,8 +7,7 @@ Created on Sat Jun 10 15:42:45 2023
 import numpy as np
 from numpy.typing import ArrayLike
 from scipy.integrate import odeint
-import matplotlib.pyplot as plt
-
+import plots
 
 #Differential equation system
 def pde(states : ArrayLike, t : float, params : ArrayLike) -> ArrayLike:
@@ -53,21 +52,7 @@ def main():
     y_norm = odeint(pde, init, time/cons, args=(params*cons,)) #Simply a change of variable in a differential equation
     
     #Plot
-    fig, ax = plt.subplots(1,2, figsize = (8,4))
-    fig.suptitle('Solution of the differentail equation')
-    ax[0].plot(time, y[:,0], label = 'x1')
-    ax[0].plot(time, y[:,1], label = 'x2')
-    ax[0].plot(time, y[:,2], label = 'y1')
-    ax[0].plot(time, y[:,3], label = 'z')
-    ax[0].legend()
-    ax[0].set_title('Solution')
-    ax[1].plot(time/cons, y_norm[:,0], label = 'x1')
-    ax[1].plot(time/cons, y_norm[:,1], label = 'x2')
-    ax[1].plot(time/cons, y_norm[:,2], label = 'y1')
-    ax[1].plot(time/cons, y_norm[:,3], label = 'z')
-    ax[1].legend()
-    ax[0].set_title('Normalized solution')
-    plt.show()
+    plots.plot_solution_scipy(time, y, y_norm)
 
 
 if __name__ == '__main__':
