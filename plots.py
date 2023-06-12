@@ -65,7 +65,7 @@ def plot_solution_scipy(time : ArrayLike, sol : ArrayLike, sol2 : ArrayLike = No
         ax[1].plot(time, sol2[:,2], label = 'y1')
         ax[1].plot(time, sol2[:,3], label = 'z')
         ax[1].legend()
-        ax[0].set_title('Normalized solution')
+        ax[1].set_title('Normalized solution')
         plt.show()
     pass
 
@@ -111,17 +111,18 @@ def plot_loss(lossi : list, mean = 20, tit = None) -> None:
     
 def plot_solution_pinn(model, time):
     model.eval()
-    with torch.no_grad():
-        pred = model(torch.from_numpy(time).float().view(-1,1))
-        x1 = pred[:,0].detach().numpy()
-        x2 = pred[:,1].detach().numpy()
-        y1 = pred[:,2].detach().numpy()
-        z = pred[:,3].detach().numpy()
+    pred = model(torch.from_numpy(time).float().view(-1,1))
+    x1 = pred[:,0].detach().numpy()
+    x2 = pred[:,1].detach().numpy()
+    y1 = pred[:,2].detach().numpy()
+    z = pred[:,3].detach().numpy()
     fig, ax = plt.subplots()
-    ax.plot(time, x1)
-    ax.plot(time, x2)
-    ax.plot(time, y1)
-    ax.plot(time, z)
+    ax.plot(time, x1, label='x1')
+    ax.plot(time, x2, label='x2')
+    ax.plot(time, y1, label='y1')
+    ax.plot(time, z, label='z')
+    ax.legend()
+    ax.set_title('PINN solution of the differentail equation')
     plt.show()
     
     
