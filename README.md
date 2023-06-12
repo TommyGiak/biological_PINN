@@ -8,14 +8,14 @@ They solve the exact same problem with same parameters, the only difference is t
 
 ## Problem
 The differential equation system that I solved in the two scripts is the following:
-$$
+```math
 \begin{cases}
     \frac{d}{dt}x_1 = 0 \\
     \frac{d}{dt}x_2 = \lambda x_1 + (\lambda - \nu) x_2\\
     \frac{d}{dt}y_1 = \nu x_2 - \gamma y_1 \\
-    \frac{d}{dt}z = \gamma y_1 - \delta z \\
+    \frac{d}{dt}z = \gamma y_1 - \delta z
 \end{cases}
-$$
+```
 This system of equation is a semplified version of the evolution of stem cells. For further details you can refer to this [paper](https://pubmed.ncbi.nlm.nih.gov/28616066/).
 
 ## How to use
