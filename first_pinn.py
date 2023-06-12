@@ -29,6 +29,119 @@ def pde_scipy(states : ArrayLike, t : float, params : ArrayLike) -> ArrayLike:
     return ([dx1,dx2,dy1,dz])  
 
 
+#Neural Network structure for the PINN
+class PINN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.seq = nn.Sequential(
+            nn.Linear(1, 64), nn.Tanh(), # In PINN, dropout, can NOT be use
+            nn.Linear(64, 32), nn.Tanh(), # and the activation function must have a smooth derivative
+            nn.Linear(32, 16), nn.Tanh(), # so ReLU doesn't work
+            nn.Linear(16, 4)
+        )
+
+    def forward(self, inp):
+        return self.seq(inp)
+    
+    def add_pde_parameters(self, params : ArrayLike) -> None:
+        '''
+        Add the parameters of the pde as buffer to the neural network structure
+
+        Parameters
+        ----------
+        params : ArrayLike
+            numpy array containing the parameters
+        Returns
+        -------
+        None
+        '''
+        assert len(params) == 4
+        params = torch.from_numpy(params).float()
+        self.register_buffer('params', params)
+        pass
+    
+    def add_initial_condition(self, init : ArrayLike, t_ic_zero = None) -> None:
+        '''
+        Add the initial condition as buffers to the network structure.
+        If t_in_zero is none the initial time will be automatically set to zero.
+
+        Parameters
+        ----------
+        init : ArrayLike
+            numpy array of the initial condition for the four states
+        t_ic_zero : optional
+            The default is None.
+
+        Returns
+        -------
+        None
+        '''
+        assert len(init) == 4
+        if t_ic_zero is None:
+            self.register_buffer('t_ic', torch.zeros(1, dtype=torch.float, requires_grad=True))
+        else:
+            self.register_buffer('t_ic', torch.tensor(t_ic_zero, dtype=torch.float, requires_grad=True))
+        init = torch.from_numpy(init).float()
+        self.register_buffer('init', init)
+        pass
+    
+    def train_step(self, t : torch.Tensor, optimizer, loss_fn) -> float:
+        '''
+        Perform a step for the training.
+
+        Parameters
+        ----------
+        t : torch.Tensor
+            Time tensor for the domain. It must have the shape : Nx1 where N is the number of training points.
+        optimizer : torch.optim
+            Optimizer to use for the training.
+        loss_fn : torch.nn
+            Loss function to use for the training.
+
+        Returns
+        -------
+        float
+            The loss of the training step.
+        '''
+        self.train()
+        optimizer.zero_grad()
+
+        # Forward pass for the initial conditions
+        out_ic = self(self.t_ic)
+        loss_ic = loss_fn(out_ic, self.init)
+        
+        # Forwward pass in time domain
+        out = self(t)
+        x1 = out[:, 0].view(-1, 1)
+        x2 = out[:, 1].view(-1, 1)
+        y1 = out[:, 2].view(-1, 1)
+        z = out[:, 3].view(-1, 1)
+        grad_out = torch.ones_like(x1) # Define the starting gradient for backprop. using autograd.grad
+        
+        # Compute gradients
+        dx1 = grad(x1, t, grad_outputs=grad_out, create_graph=True)[0]
+        dx2 = grad(x2, t, grad_outputs=grad_out, create_graph=True)[0]
+        dy1 = grad(y1, t, grad_outputs=grad_out, create_graph=True)[0]
+        dz = grad(z, t, grad_outputs=grad_out, create_graph=True)[0]
+        
+        # Compute partial differential equation (PDE) and their losses
+        pde_x1 = 0. - dx1
+        pde_x2 = 0.2 * x1 + (0.2 - 0.33) * x2 - dx2
+        pde_y1 = 0.33 * x2 - 2. * y1 - dy1
+        pde_z = 2. * y1 - 0.3 * z - dz
+        loss_pdex1 = loss_fn(pde_x1, torch.zeros_like(dx1))
+        loss_pdex2 = loss_fn(pde_x2, torch.zeros_like(pde_x2))
+        loss_pdey1 = loss_fn(pde_y1, torch.zeros_like(pde_y1))
+        loss_pdez = loss_fn(pde_z, torch.zeros_like(pde_z))
+        
+        # Total loss and optim step
+        loss = loss_pdex1 + loss_pdex2 + loss_pdey1 + loss_pdez + loss_ic
+        loss.backward()
+        optimizer.step()
+        
+        return loss.item() # Return the computed loss as float
+
+
 def main():
     ##Real solution with scipy
     #Parameters 
@@ -47,7 +160,7 @@ def main():
     
     #Time domain
     ub_time = 2. #Upper bound for the time domain during the integration
-    time = np.linspace(0, ub_time, 1000)
+    time = np.linspace(0, ub_time, 100)
     
     #Normalization factor
     cons = ub_time
@@ -61,98 +174,37 @@ def main():
     plots.plot_solution_scipy(time, y, y_norm)
     
     
-    ##PINN solution
     
-    class PINN(nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.seq = nn.Sequential(
-                nn.Linear(1, 64),
-                nn.Tanh(),
-                nn.Linear(64, 32),
-                nn.Tanh(),
-                nn.Linear(32, 16),
-                nn.Tanh(),
-                nn.Linear(16, 4)
-            )
     
-        def forward(self, inp):
-            return self.seq(inp)
     
+    ##PINN solution    
+    # Create PINN instance
+    pinn = PINN()
+    pinn.add_pde_parameters(params) # Add the parameters of the pde as buffers
+    pinn.add_initial_condition(init) # Add the initial conditions, starting time by default is zero
     
     # Convert data to tensors
-    t = np.linspace(0, 5, 1000)  # Example time data, adjust according to your problem
-    t_tensor = torch.from_numpy(t).float().view(-1, 1).requires_grad_(True)
-    t_ic = torch.zeros(1, dtype=torch.float32).view(-1, 1).requires_grad_(True)
-    ic = torch.from_numpy(init).float().view(1, -1)
-    
-    # Create PINN instance and define loss function
-    pinn = PINN()
-    loss_fn = nn.MSELoss()
-    
+    # The input and target must be float numbers
+    t = torch.from_numpy(time).float().view(-1, 1).requires_grad_(True)
+  
     # Set training parameters
     epochs = 5000
     optimizer = torch.optim.Adam(pinn.parameters(), lr=1e-3)
+    loss_fn = nn.MSELoss()
     loss_history = []
     
-    pinn.train()
     for epoch in range(epochs):
-        optimizer.zero_grad()
-        ind = torch.randperm(len(t_tensor))
-        time = t_tensor[ind]
-    
-        # Forward pass
-        out_ic = pinn(t_ic)
-        loss_ic = loss_fn(out_ic, ic)
-    
-        out = pinn(time)
-        x1 = out[:, 0].view(-1, 1)
-        x2 = out[:, 1].view(-1, 1)
-        y1 = out[:, 2].view(-1, 1)
-        z = out[:, 3].view(-1, 1)
-        grad_out = torch.ones_like(x1)
-    
-        # Compute gradients
-        gradient1 = grad(x1, time, grad_outputs=grad_out, create_graph=True)[0]
-        gradient2 = grad(x2, time, grad_outputs=grad_out, create_graph=True)[0]
-        gradient3 = grad(y1, time, grad_outputs=grad_out, create_graph=True)[0]
-        gradient4 = grad(z, time, grad_outputs=grad_out, create_graph=True)[0]
-    
-        # Compute partial differential equation (PDE) losses
-        pde_x2 = 0.2 * x1 + (0.2 - 0.33) * x2 - gradient2
-        pde_y1 = 0.33 * x2 - 2. * y1 - gradient3
-        pde_z = 2. * y1 - 0.3 * z - gradient4
-        loss_pdex1 = loss_fn(gradient1, torch.zeros_like(gradient1))
-        loss_pdex2 = loss_fn(pde_x2, torch.zeros_like(pde_x2))
-        loss_pdey1 = loss_fn(pde_y1, torch.zeros_like(pde_y1))
-        loss_pdez = loss_fn(pde_z, torch.zeros_like(pde_z))
-    
-        # Total loss
-        loss = loss_pdex1 + loss_pdex2 + loss_pdey1 + loss_pdez + loss_ic
-        loss.backward()
-        optimizer.step()
-    
-        loss_history.append(loss.item())
+        
+        loss = pinn.train_step(t, optimizer, loss_fn)
+        loss_history.append(loss)
+        
         if (epoch + 1) % (epochs / 20) == 0:
-            print("Epoch:", epoch + 1, "Loss:", loss.item())
-
-    plt.plot(loss_history)
+            print(f"{epoch/epochs*100:.1f}% -> Loss: ", loss)
 
 
-    pinn.eval()
-    print(pinn(t_ic))
-    with torch.no_grad():
-        pred = pinn(torch.from_numpy(t).float().view(-1,1))
-        x1 = pred[:,0].detach().numpy()
-        x2 = pred[:,1].detach().numpy()
-        y1 = pred[:,2].detach().numpy()
-        z = pred[:,3].detach().numpy()
-    fig, ax = plt.subplots()
-    ax.plot(t, x1)
-    ax.plot(t, x2)
-    ax.plot(t, y1)
-    ax.plot(t, z)
-    plt.show()
+    plots.plot_loss(loss_history)    
+
+    plots.plot_solution_pinn(pinn, time)
 
 if __name__ == '__main__':
     main()

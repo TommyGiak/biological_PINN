@@ -7,6 +7,20 @@ Created on Sun Jun 11 11:50:44 2023
 """
 import matplotlib.pyplot as plt
 from numpy.typing import ArrayLike
+import numpy as np
+import torch
+
+class Bcolors:
+    #Class to print on terminal with different colors
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 #Plots
 def plot_solution_scipy(time : ArrayLike, sol : ArrayLike, sol2 : ArrayLike = None) -> None:
@@ -54,3 +68,62 @@ def plot_solution_scipy(time : ArrayLike, sol : ArrayLike, sol2 : ArrayLike = No
         ax[0].set_title('Normalized solution')
         plt.show()
     pass
+
+
+def plot_loss(lossi : list, mean = 20, tit = None) -> None:
+    '''
+    Plot the loss history in log scale.
+    
+    Parameters
+    ----------
+    lossi : list, ArrayLike
+    
+    mean : Optional
+        The plot will show the mean of the loss for this number of steps.
+        
+    tit : str, optional
+        Title to put on the plot.
+
+    Returns
+    -------
+    Show the plot
+    '''
+    try:
+        lossi = np.array(lossi)
+        y = lossi.reshape(-1,mean).mean(axis=1)
+        x = np.linspace(1, len(y), num=len(y))
+        fig, ax = plt.subplots()
+        ax.plot(x,y)
+        if tit is None:
+            ax.set_title(f'Mean of {mean} losses steps')
+        else:
+            ax.set_title(tit)
+        ax.set_ylabel('loss')
+        ax.set_xlabel(f'epoch/{mean}')
+        ax.set_yscale('log')
+        plt.show()
+        pass
+    except:
+        print(f'{Bcolors.WARNING}WARNING : {Bcolors.ENDC}the shape of lossi is not multiple of {mean}!')
+        print('The loss track plot will not be shown')
+        pass
+    
+    
+def plot_solution_pinn(model, time):
+    model.eval()
+    with torch.no_grad():
+        pred = model(torch.from_numpy(time).float().view(-1,1))
+        x1 = pred[:,0].detach().numpy()
+        x2 = pred[:,1].detach().numpy()
+        y1 = pred[:,2].detach().numpy()
+        z = pred[:,3].detach().numpy()
+    fig, ax = plt.subplots()
+    ax.plot(time, x1)
+    ax.plot(time, x2)
+    ax.plot(time, y1)
+    ax.plot(time, z)
+    plt.show()
+    
+    
+    
+    
