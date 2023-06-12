@@ -53,7 +53,7 @@ def plot_solution_scipy(time : ArrayLike, sol : ArrayLike, sol2 : ArrayLike = No
         plt.show()
     else:
         fig, ax = plt.subplots(1,2, figsize = (8,4))
-        fig.suptitle('Solution of the differentail equation')
+        fig.suptitle('Solution of the differentail equation by scipy')
         ax[0].plot(time, sol[:,0], label = 'x1')
         ax[0].plot(time, sol[:,1], label = 'x2')
         ax[0].plot(time, sol[:,2], label = 'y1')

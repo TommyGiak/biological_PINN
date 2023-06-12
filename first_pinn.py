@@ -55,9 +55,6 @@ def main():
     #Normalized solution: limited time range (in [0,1]) to numerical stability of the neural network
     y_norm = odeint(pde_scipy, init, time/cons, args=(params*cons,)) #Simply a change of variable in a differential equation
     
-    #Plot
-    plots.plot_solution_scipy(time, y, y_norm)
-    
     
     ##PINN solution    
     # Create PINN instance
@@ -97,6 +94,7 @@ def main():
             print(f"{epoch/epochs*100:.1f}% -> Loss: ", loss)
     
     # Plots
+    plots.plot_solution_scipy(time, y, y_norm)
     plots.plot_loss(loss_history)
     plots.plot_solution_pinn(pinn, time)
 

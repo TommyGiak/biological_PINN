@@ -55,9 +55,6 @@ def main():
     #Normalized solution: limited time range (in [0,1]) to numerical stability of the neural network
     y_norm = odeint(pde_scipy, init, time/cons, args=(params*cons,)) #Simply a change of variable in a differential equation
     
-    #Plot
-    plots.plot_solution_scipy(time, y, y_norm)
-    
     
     ##PINN solution
     # Definition of the pde system
@@ -103,6 +100,7 @@ def main():
     model.train()
     
     #Plot
+    plots.plot_solution_scipy(time, y, y_norm)
     t = np.linspace(0, 2, 100)
     t = t.reshape(100, 1)
     sol_pred = model.predict(t)
