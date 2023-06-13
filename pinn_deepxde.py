@@ -23,7 +23,7 @@ def pde_scipy(states : ArrayLike, t : float, params : ArrayLike) -> ArrayLike:
     dx1 = 0. #According to the model x1 is constant
     dx2 = params[0]*states[0] + states[1]*(params[0]-params[1])
     dy1 = states[1]*params[1] - states[2]*params[2] 
-    dz = states[2]*params[2] - states[3]*params[3]
+    dz = 2*states[2]*params[2] - states[3]*params[3]
     return ([dx1,dx2,dy1,dz])  
 
 
@@ -70,7 +70,7 @@ def main():
         return [dx1 - 0.,
                 dx2 - params[0] * x1 - x2 * (params[0]-params[1]),
                 dy1 - x2 * params[1] + y1 * params[2],
-                dz - params[2] * y1 + params[3] * z
+                dz - 2 * params[2] * y1 + params[3] * z
                 ]  
     
     #Geometry of the problem and definition

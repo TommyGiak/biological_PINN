@@ -23,7 +23,7 @@ def pde_scipy(states : ArrayLike, t : float, params : ArrayLike) -> ArrayLike:
     dx1 = 0. #According to the model x1 is constant
     dx2 = params[0]*states[0] + states[1]*(params[0]-params[1])
     dy1 = states[1]*params[1] - states[2]*params[2] 
-    dz = states[2]*params[2] - states[3]*params[3]
+    dz = 2*states[2]*params[2] - states[3]*params[3]
     return ([dx1,dx2,dy1,dz])              
 
 
@@ -33,7 +33,7 @@ def main():
     lam = 0.2
     nu = 0.33
     gamma = 2.
-    delta = 0.3
+    delta = 0.33
     params = np.array([lam,nu,gamma,delta])
     
     #Initial conditions
@@ -44,7 +44,7 @@ def main():
     init = np.array([x1,x2,y1,z])
     
     #Time domain
-    ub_time = 20. #Upper bound for the time domain during the integration
+    ub_time = 50. #Upper bound for the time domain during the integration
     time = np.linspace(0, ub_time, 100)
     
     #Normalization factor
