@@ -10,9 +10,9 @@ They solve the exact same problem with same parameters, the only difference is t
 The differential equation system that I solved in the two scripts is the following:
 ```math
 \begin{cases}
-\frac{d}{dt}x_1 = 0 \\
-\frac{d}{dt}x_2 = \lambda x_1 + (\lambda - \nu x_2\\
-\frac{d}{dt}y_1 = \nu x_2 - \gamma y_1 \\
+\frac{d}{dt}x_1 = 0\\
+\frac{d}{dt}x_2 = \lambda x_1 + (\lambda - \nu) x_2\\
+\frac{d}{dt}y_1 = \nu x_2 - \gamma y_1\\
 \frac{d}{dt}z = 2\gamma y_1 - \delta z
 \end{cases}
 ```
