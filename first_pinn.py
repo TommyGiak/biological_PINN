@@ -44,7 +44,7 @@ def main():
     init = np.array([x1,x2,y1,z])
     
     #Time domain
-    ub_time = 50. #Upper bound for the time domain during the integration
+    ub_time = 20. #Upper bound for the time domain during the integration
     time = np.linspace(0, ub_time, 100)
     
     #Normalization factor

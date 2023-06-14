@@ -115,9 +115,9 @@ class PINN(nn.Module):
         
         # Compute partial differential equation (PDE) and their losses
         pde_x1 = 0. - dx1
-        pde_x2 = 0.2 * x1 + (0.2 - 0.33) * x2 - dx2
-        pde_y1 = 0.33 * x2 - 2. * y1 - dy1
-        pde_z = 2 * 2. * y1 - 0.33 * z - dz
+        pde_x2 = self.params[0] * x1 + (self.params[0] - self.params[1]) * x2 - dx2
+        pde_y1 = self.params[1] * x2 - self.params[2] * y1 - dy1
+        pde_z = 2 * self.params[2] * y1 - self.params[3] * z - dz
         loss_pdex1 = loss_fn(pde_x1, torch.zeros_like(dx1))
         loss_pdex2 = loss_fn(pde_x2, torch.zeros_like(pde_x2))
         loss_pdey1 = loss_fn(pde_y1, torch.zeros_like(pde_y1))
