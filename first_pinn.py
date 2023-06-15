@@ -28,6 +28,9 @@ def pde_scipy(states : ArrayLike, t : float, params : ArrayLike) -> ArrayLike:
 
 
 def main():
+    
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
     ##Real solution with scipy
     #Parameters 
     lam = 0.2
@@ -59,13 +62,13 @@ def main():
     ##PINN solution    
     # Create PINN instance
     torch.manual_seed(0)
-    pinn = PINN()
+    pinn = PINN().to(device)
     pinn.add_pde_parameters(params) # Add the parameters of the pde as buffers
     pinn.add_initial_condition(init) # Add the initial conditions, starting time by default is zero
     
     # Convert data to tensors
     # The input and target must be float numbers
-    t = torch.from_numpy(time).float().view(-1, 1).requires_grad_(True)
+    t = torch.from_numpy(time).float().view(-1, 1).to(device).requires_grad_(True)
   
     # Set training parameters
     epochs = 1000

@@ -110,12 +110,13 @@ def plot_loss(lossi : list, mean = 20, tit = None) -> None:
     
     
 def plot_solution_pinn(model, time):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.eval()
-    pred = model(torch.from_numpy(time).float().view(-1,1))
-    x1 = pred[:,0].detach().numpy()
-    x2 = pred[:,1].detach().numpy()
-    y1 = pred[:,2].detach().numpy()
-    z = pred[:,3].detach().numpy()
+    pred = model(torch.from_numpy(time).to(device).float().view(-1,1))
+    x1 = pred[:,0].detach().cpu().numpy()
+    x2 = pred[:,1].detach().cpu().numpy()
+    y1 = pred[:,2].detach().cpu().numpy()
+    z = pred[:,3].detach().cpu().numpy()
     fig, ax = plt.subplots()
     ax.plot(time, x1, label='x1')
     ax.plot(time, x2, label='x2')
