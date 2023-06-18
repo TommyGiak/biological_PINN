@@ -127,5 +127,22 @@ def plot_solution_pinn(model, time):
     plt.show()
     
     
-    
+def plot_solution_pinn_inverse(model, time, data):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.eval()
+    pred = model(torch.from_numpy(time).to(device).float().view(-1,1))
+    x1 = pred[:,0].detach().cpu().numpy()
+    x2 = pred[:,1].detach().cpu().numpy()
+    y1 = pred[:,2].detach().cpu().numpy()
+    z = pred[:,3].detach().cpu().numpy()
+    fig, ax = plt.subplots()
+    ax.plot(time, x1, label='x1')
+    ax.plot(time, x2, label='x2')
+    ax.plot(time, y1, label='y1')
+    ax.plot(time, z, label='z')
+    ax.scatter(time, data[:,3], label='data used z', s = 10)
+    ax.scatter(time, data[:,2], label='data used y1', s = 10)
+    ax.legend()
+    ax.set_title('PINN solution of the differentail equation')
+    plt.show()
     

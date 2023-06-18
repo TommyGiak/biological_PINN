@@ -5,26 +5,12 @@ Created on Sat Jun 10 15:42:45 2023
 @author: Tommaso Giacometti
 """
 import numpy as np
-from numpy.typing import ArrayLike
 from scipy.integrate import odeint
 import plots
 import torch
 from torch import nn
 from model import PINN
-
-#Differential equation system
-def pde_scipy(states : ArrayLike, t : float, params : ArrayLike) -> ArrayLike:
-    assert len(states) == 4 #Input states must be of lenght 4
-    assert len(params) == 4 #Input params as well
-    if min(states) < 0:
-        raise ValueError('The states of the system is cannot be negative')
-    if min(params) < 0:
-        raise ValueError('The parameters of the system must be positive')
-    dx1 = 0. #According to the model x1 is constant
-    dx2 = params[0]*states[0] + states[1]*(params[0]-params[1])
-    dy1 = states[1]*params[1] - states[2]*params[2] 
-    dz = 2*states[2]*params[2] - states[3]*params[3]
-    return ([dx1,dx2,dy1,dz])              
+from utils import pde_scipy            
 
 
 def main():
