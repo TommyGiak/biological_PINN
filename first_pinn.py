@@ -81,6 +81,7 @@ def main():
             print(f"{epoch/epochs*100:.1f}% -> Loss: ", loss)
     
     # Plots
+    plots.plot_solution_scipy(time, y, y_norm)
     plots.plot_loss(loss_history)
     plots.plot_solution_pinn(pinn, time, y)
 

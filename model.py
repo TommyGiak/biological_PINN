@@ -89,8 +89,8 @@ class PINN(nn.Module):
 
         Returns
         -------
-        float
-            The loss of the training step.
+        Tensor
+            The loss of the training step as Tensor.
         '''
         if loss_fn is None:
             loss_fn = nn.MSELoss()
@@ -234,6 +234,9 @@ class PINN_inverse(nn.Module):
         ----------
         t : torch.Tensor
             Time tensor for the domain. It must have the shape : Nx1 where N is the number of training points.
+        data : torch.Tensor
+            data generated for the fit of the parameters. In the first column must be the time
+            while in the last four the generated solution.
         optimizer : torch.optim
             Optimizer to use for the training.
         loss_fn : torch.nn
@@ -244,8 +247,8 @@ class PINN_inverse(nn.Module):
 
         Returns
         -------
-        float
-            The loss of the training step.
+        Tensot
+            The loss of the training step as tensor.
         '''
         if loss_fn is None:
             loss_fn = nn.MSELoss()
@@ -281,10 +284,10 @@ class PINN_inverse(nn.Module):
         loss_pdez = loss_fn(pde_z, torch.zeros_like(pde_z))
         
         # Data loss
-        data_t = data[:,0:1]
-        data_points = data[:,1:]
-        out_data = self(data_t)
-        loss_data = loss_fn(out_data[:,2:4], data_points[:,2:4])
+        data_t = data[:,0:1] #selection of the time column
+        data_points = data[:,1:] #selection of the generated solution (all the four variables)
+        out_data = self(data_t) 
+        loss_data = loss_fn(out_data[:,2:4], data_points[:,2:4]) #using only the generated solution of y1 and z
         
         # Total loss and optim step
         loss = loss_pdex1 + loss_pdex2 + loss_pdey1 + loss_pdez + loss_ic + 0.5*loss_data # The 0.5 factor is to get smoother solution and avoid overfitting with datapoints
@@ -296,6 +299,26 @@ class PINN_inverse(nn.Module):
     
     
     def set_up_lbfgs(self, t : Tensor, data : Tensor):
+        '''
+        Preparing the network for the lbfgs training.\n
+        The lbfgs optimizer need a closure function, in this case is recycled the train_step() function
+        adapted for the lgsbf train (optioin lbfgs=True).
+
+        Parameters
+        ----------
+        t : Tensor
+            time Tensor where to evaluate the pde loss.
+        data : Tensor
+            data with in the first column the time points and in the last 4 the generated data.
+
+        Returns
+        -------
+        optimizer
+            LBFGS optimizer ready for the use.
+        TYPE
+            closure function needed by the LBFGS.
+
+        '''
         self.register_buffer('time', t)
         self.register_buffer('data', data)
         #With noisy data lbfgs is likely to return nan result due to convergence problem
