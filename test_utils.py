@@ -55,8 +55,8 @@ def test_detagen_correct_size0(t_size):
 def test_detagen_correct_size1(t_size, params):
     init = np.random.randint(0,MAX,size=(4,))
     time = np.linspace(0, 50, t_size)
-    assert inverse_pinn_data_gen(init, time, params, False).shape[1] == 4
-    assert inverse_pinn_data_gen(init, time, params, True).shape[1] == 4
+    assert inverse_pinn_data_gen(init, time, params, False).shape[1] == 5
+    assert inverse_pinn_data_gen(init, time, params, True).shape[1] == 5
     pass
 
 

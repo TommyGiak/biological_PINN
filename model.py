@@ -71,7 +71,7 @@ class PINN(nn.Module):
         pass
     
     
-    def train_step(self, t : Tensor, optimizer, loss_fn, lbfgs : bool = False) -> float:
+    def train_step(self, t : Tensor, optimizer, loss_fn = None, lbfgs : bool = False) -> float:
         '''
         Perform a step for the training.
 
@@ -82,7 +82,7 @@ class PINN(nn.Module):
         optimizer : torch.optim
             Optimizer to use for the training.
         loss_fn : torch.nn
-            Loss function to use for the training.
+            Loss function to use for the training, by default (None) MSELoss will be used.
         lbfgs : bool, optional
             Parameter to use this function as closure() for the LBFGS optimizer training. DEFAULT False,
             set to True ONLY for the LBFGS otherwise the training will fail.
@@ -92,6 +92,8 @@ class PINN(nn.Module):
         float
             The loss of the training step.
         '''
+        if loss_fn is None:
+            loss_fn = nn.MSELoss()
         self.train()
         optimizer.zero_grad()
 
@@ -224,7 +226,7 @@ class PINN_inverse(nn.Module):
         pass
     
     
-    def train_step(self, t : Tensor, data : Tensor, optimizer, loss_fn, lbfgs : bool = False) -> float:
+    def train_step(self, t : Tensor, data : Tensor, optimizer, loss_fn = None, lbfgs : bool = False) -> float:
         '''
         Perform a step for the training.
 
@@ -235,7 +237,7 @@ class PINN_inverse(nn.Module):
         optimizer : torch.optim
             Optimizer to use for the training.
         loss_fn : torch.nn
-            Loss function to use for the training.
+            Loss function to use for the training, by default (None) MSELoss will be used.
         lbfgs : bool, optional
             Parameter to use this function as closure() for the LBFGS optimizer training. DEFAULT False,
             set to True ONLY for the LBFGS otherwise the training will fail.
@@ -245,6 +247,8 @@ class PINN_inverse(nn.Module):
         float
             The loss of the training step.
         '''
+        if loss_fn is None:
+            loss_fn = nn.MSELoss()
         self.train()
         optimizer.zero_grad()
 
@@ -277,10 +281,13 @@ class PINN_inverse(nn.Module):
         loss_pdez = loss_fn(pde_z, torch.zeros_like(pde_z))
         
         # Data loss
-        loss_data = loss_fn(out[:,3], data[:,3])
+        data_t = data[:,0:1]
+        data_points = data[:,1:]
+        out_data = self(data_t)
+        loss_data = loss_fn(out_data[:,2:4], data_points[:,2:4])
         
         # Total loss and optim step
-        loss = loss_pdex1 + loss_pdex2 + loss_pdey1 + loss_pdez + loss_ic + loss_data
+        loss = loss_pdex1 + loss_pdex2 + loss_pdey1 + loss_pdez + loss_ic + 0.5*loss_data # The 0.5 factor is to get smoother solution and avoid overfitting with datapoints
         loss.backward()
         if not lbfgs: # In the LBFGS, the optimizer step is permormed in the LBFGS class
             optimizer.step()
@@ -291,7 +298,10 @@ class PINN_inverse(nn.Module):
     def set_up_lbfgs(self, t : Tensor, data : Tensor):
         self.register_buffer('time', t)
         self.register_buffer('data', data)
-        optimizer = torch.optim.LBFGS(self.parameters())
+        #With noisy data lbfgs is likely to return nan result due to convergence problem
+        #for this reason I reduced the history size, but it can't always solve the problem.
+        #If the problem persist the lbfgs training can be simpli avoided
+        optimizer = torch.optim.LBFGS(self.parameters(), history_size=10) 
         self.optimizer = optimizer
         self.loss_fn = nn.MSELoss()
         

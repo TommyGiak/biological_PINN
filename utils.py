@@ -8,13 +8,12 @@ Created on Sun Jun 18 16:35:27 2023
 from numpy.typing import ArrayLike
 from scipy.integrate import odeint
 from numpy.random import normal
+import numpy as np
 
 #Differential equation system
 def pde_scipy(states : ArrayLike, t : float, params : ArrayLike) -> ArrayLike:
     assert len(states) == 4 #Input states must be of lenght 4
     assert len(params) == 4 #Input params as well
-    if min(states) < 0:
-        raise ValueError('The states of the system is cannot be negative')
     if min(params) < 0:
         raise ValueError('The parameters of the system must be positive')
     dx1 = 0. #According to the model x1 is constant
@@ -46,16 +45,19 @@ def inverse_pinn_data_gen(init : ArrayLike, time : ArrayLike, params : ArrayLike
     Returns
     -------
     ArrayLike
-        Data for the inverse problem generated with scipy.integrate.odeint 
+        Data for the inverse problem generated with scipy.integrate.odeint, the first column
+        is the time points!
 
     '''
-    y = odeint(pde_scipy, init, time, args=(params,))
     assert len(init) == 4 #Input states must be of lenght 4
     assert len(params) == 4 #Input params as well
+    y = odeint(pde_scipy, init, time, args=(params,))
     if noise:
         size = len(time)
         gauss = normal(scale=std, size=(size,4))
         y += gauss
+    time = np.expand_dims(time, 1)
+    y = np.hstack((time,y))
     return y
 
 

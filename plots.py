@@ -109,7 +109,7 @@ def plot_loss(lossi : list, mean = 20, tit = None) -> None:
         pass
     
     
-def plot_solution_pinn(model, time):
+def plot_solution_pinn(model, time, sol = None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.eval()
     pred = model(torch.from_numpy(time).to(device).float().view(-1,1))
@@ -122,12 +122,17 @@ def plot_solution_pinn(model, time):
     ax.plot(time, x2, label='x2')
     ax.plot(time, y1, label='y1')
     ax.plot(time, z, label='z')
+    if sol is not None:
+        ax.plot(time, sol[:,0], label = 'real', linestyle='--', linewidth=1., c='black')
+        ax.plot(time, sol[:,1], linestyle='--', linewidth=1., c='black')
+        ax.plot(time, sol[:,2], linestyle='--', linewidth=1., c='black')
+        ax.plot(time, sol[:,3], linestyle='--', linewidth=1., c='black')
     ax.legend()
     ax.set_title('PINN solution of the differentail equation')
     plt.show()
     
     
-def plot_solution_pinn_inverse(model, time, data):
+def plot_solution_pinn_inverse(model, time, data, sol = None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.eval()
     pred = model(torch.from_numpy(time).to(device).float().view(-1,1))
@@ -136,13 +141,22 @@ def plot_solution_pinn_inverse(model, time, data):
     y1 = pred[:,2].detach().cpu().numpy()
     z = pred[:,3].detach().cpu().numpy()
     fig, ax = plt.subplots()
-    ax.plot(time, x1, label='x1')
-    ax.plot(time, x2, label='x2')
-    ax.plot(time, y1, label='y1')
-    ax.plot(time, z, label='z')
-    ax.scatter(time, data[:,3], label='data used z', s = 10)
-    ax.scatter(time, data[:,2], label='data used y1', s = 10)
+    ax.plot(time, x1, label='x1', linewidth=2.)
+    ax.plot(time, x2, label='x2', linewidth=2.)
+    ax.plot(time, y1, label='y1', linewidth=2.)
+    ax.plot(time, z, label='z', linewidth=2.)
+    data_t = data[:,0]
+    data_points = data[:,1:]
+    ax.scatter(data_t, data_points[:,3], label='data used', s = 10, c = 'tab:gray')
+    ax.scatter(data_t, data_points[:,2], s = 10, c = 'tab:gray')
+    if sol is not None:
+        ax.plot(time, sol[:,0], label = 'real', linestyle='--', linewidth=1., c='black')
+        ax.plot(time, sol[:,1], linestyle='--', linewidth=1., c='black')
+        ax.plot(time, sol[:,2], linestyle='--', linewidth=1., c='black')
+        ax.plot(time, sol[:,3], linestyle='--', linewidth=1., c='black')
     ax.legend()
+    ax.set_xlabel('time (days)')
+    ax.set_ylabel('cells')
     ax.set_title('PINN solution of the differentail equation')
     plt.show()
     

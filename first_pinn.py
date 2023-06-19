@@ -8,7 +8,6 @@ import numpy as np
 from scipy.integrate import odeint
 import plots
 import torch
-from torch import nn
 from model import PINN
 from utils import pde_scipy            
 
@@ -59,13 +58,12 @@ def main():
     # Set training parameters
     epochs = 1000
     optimizer = torch.optim.Adam(pinn.parameters(), lr=1e-3)
-    loss_fn = nn.MSELoss()
     loss_history = []
     
     #Training performed with Adam (or the one setted above)
     print(f'Adam training ({epochs} epochs):')
     for epoch in range(epochs):
-        loss = pinn.train_step(t, optimizer, loss_fn).item() # Single train step defined in the PINN class
+        loss = pinn.train_step(t, optimizer).item() # Single train step defined in the PINN class
         loss_history.append(loss)
         if (epoch + 1) % (epochs / 20) == 0:
             print(f"{epoch/epochs*100:.1f}% -> Loss: ", loss)
@@ -83,9 +81,8 @@ def main():
             print(f"{epoch/epochs*100:.1f}% -> Loss: ", loss)
     
     # Plots
-    plots.plot_solution_scipy(time, y, y_norm)
     plots.plot_loss(loss_history)
-    plots.plot_solution_pinn(pinn, time)
+    plots.plot_solution_pinn(pinn, time, y)
 
 
 
