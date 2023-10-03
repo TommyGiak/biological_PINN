@@ -1,6 +1,6 @@
 # PINN for biological systems
 This repository tries to solve systems of differential equation for biological systems using PINNs (Physics Informed Neural Networks).\
-The scripts are implemented using [Pythorc](https://pytorch.org) or the <em>ad hoc</em> library [DeepXDE](https://github.com/lululxvi/deepxde).
+The scripts are implemented using [Pytorch](https://pytorch.org) or the <em>ad hoc</em> library [DeepXDE](https://github.com/lululxvi/deepxde).
 
 ## Organization of the repository
 Up to now therepository contain three main files: <em>first_pinn.py, pinn_deepxde.py</em> and <em>inverse_pinn.py</em>.\
